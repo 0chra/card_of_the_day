@@ -186,18 +186,18 @@
             <!-- Персональная приписка внизу карточки -->
             <div class="pt-3 border-t border-[#F2ECE0] flex items-center justify-between text-[11px] text-[#8C8272]">
                 <span id="card-personal-note" class="font-serif-editorial italic">«Коллекция слов собрана специально для Даши 🌿»</span>
-                <span class="text-[10px] font-mono opacity-60">365 дней</span>
+                <span id="card-status-pill" class="text-[10px] font-mono opacity-60">365 дней</span>
             </div>
 
         </div>
 
-        <!-- Нижняя панель действий (только Поделиться карточкой) -->
+        <!-- Нижняя панель действий -->
         <div class="mt-4">
             <button id="btn-copy" class="w-full flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl bg-[#3E4B3E] text-[#FFFDF9] text-xs font-semibold hover:bg-[#343F34] active:scale-98 transition-all shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
                 </svg>
-                Поделиться карточкой сегодняшнего дня
+                <span id="btn-copy-text">Поделиться карточкой сегодняшнего дня</span>
             </button>
         </div>
     </main>
@@ -224,7 +224,9 @@
             <div class="space-y-4 text-xs leading-relaxed text-[#57524A] mt-4">
                 <div class="p-3.5 bg-[#FAF6F0] rounded-xl border border-[#EBE3D7]">
                     <p class="font-semibold text-[#3E4B3E] mb-1">✨ Как это работает?</p>
-                    <p>Каждый день при открытии этой страницы рассчитывается ровно одно уникальное редкое слово на текущую дату. Период коллекции: с <b>13 октября 2026 года</b> по <b>12 октября 2027 года</b></p>
+                    <p>Каждый день при открытии этой страницы рассчитывается ровно одно уникальное редкое слово на текущую дату. Период коллекции: с <b>13 октября 2026 года</b> по <b>12 октября 2027 года</b> (ровно 365 слов без повторений).</p>
+                    <p class="mt-2 text-[#7A6F5D]"><b>13 октября 2027:</b> открывается специальное поздравительное послание в будущее.</p>
+                    <p class="mt-1 text-[#7A6F5D]"><b>После 14 октября 2027:</b> финальная карточка о завершении путешествия.</p>
                 </div>
 
                 <div>
@@ -5744,22 +5746,133 @@
   }
 ];
 
-        // Начальная дата коллекции: 13 октября 2026 года
-        const START_DATE = new Date(2026, 9, 13); // Месяц 0-индексирован: 9 = Октябрь
+        // Ключевые календарные даты (год, месяц 0-индексирован, день)
+        const START_DATE = new Date(2026, 9, 13);         // 13 октября 2026 (День 1)
+        const END_DATE = new Date(2027, 9, 12);           // 12 октября 2027 (День 365)
+        const FUTURE_GREETING_DATE = new Date(2027, 9, 13);// 13 октября 2027 (Поздравление в будущее)
+        const JOURNEY_END_DATE = new Date(2027, 9, 14);   // 14 октября 2027 и далее (Путешествие окончено)
 
-        // Определение детерминированного индекса слова на текущую дату
-        function getDailyIndex(targetDate) {
-            const start = new Date(START_DATE.getFullYear(), START_DATE.getMonth(), START_DATE.getDate());
-            const cur = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-            const diffTime = cur - start;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            return ((diffDays % 365) + 365) % 365;
+        function getZeroTimeDate(d) {
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
         }
 
-        // Текущее состояние приложения
-        const todayDate = new Date();
-        const todayIndex = getDailyIndex(todayDate);
-        const currentIndex = todayIndex;
+        // Получение текущей даты (с поддержкой URL параметра ?testDate=YYYY-MM-DD для удобной проверки)
+        function getCurrentEffectiveDate() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const testDateStr = urlParams.get('testDate') || urlParams.get('date');
+            if (testDateStr) {
+                const parts = testDateStr.split('-');
+                if (parts.length === 3) {
+                    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                }
+            }
+            return new Date();
+        }
+
+        const effectiveDate = getZeroTimeDate(getCurrentEffectiveDate());
+
+        // Определение состояния показа карточки
+        function resolveCardState(curDate) {
+            const curTime = curDate.getTime();
+            const startTime = START_DATE.getTime();
+            const endTime = END_DATE.getTime();
+            const futureGreetingTime = FUTURE_GREETING_DATE.getTime();
+
+            // 1. До начала (до 13 октября 2026)
+            if (curTime < startTime) {
+                const daysUntil = Math.ceil((startTime - curTime) / (1000 * 60 * 60 * 24));
+                return {
+                    type: 'PRE_START',
+                    data: {
+                        word: 'Предвкушение',
+                        script: 'Скоро открытие',
+                        lang: 'Календарь',
+                        flag: '⏳',
+                        ipa: '[скоро начнется]',
+                        meaning: `Коллекция откроет свое первое слово 13 октября 2026 года. До начала путешествия осталось дней: ${daysUntil}.`,
+                        culture: 'Каждый день на протяжении года здесь будет ровно одно редкое слово из разных уголков мира. Возвращайся завтра!',
+                        example: '«Путешествие в тысячу ли начинается с первого шага и первого слова.»',
+                        date: 'Скоро открытие',
+                        indexBadge: 'Ожидание старта',
+                        statusPill: 'Старт 13.10.2026',
+                        note: CONFIG.personalNote,
+                        speechLang: 'ru-RU',
+                        pronounceWord: 'Предвкушение'
+                    }
+                };
+            }
+
+            // 2. В течение 365 дней (с 13 октября 2026 по 12 октября 2027)
+            if (curTime >= startTime && curTime <= endTime) {
+                const diffDays = Math.floor((curTime - startTime) / (1000 * 60 * 60 * 24));
+                const item = DICTIONARY[diffDays];
+                return {
+                    type: 'DAILY',
+                    data: {
+                        word: item.word,
+                        script: item.script,
+                        lang: item.lang,
+                        flag: item.flag,
+                        ipa: item.ipa,
+                        meaning: item.meaning,
+                        culture: item.culture,
+                        example: item.example,
+                        date: item.date,
+                        indexBadge: `День ${item.index} из 365`,
+                        statusPill: '365 дней',
+                        note: CONFIG.personalNote,
+                        speechLang: item.speechLang,
+                        pronounceWord: item.word
+                    }
+                };
+            }
+
+            // 3. Ровно 13 октября 2027 года: Поздравление «как бы в будущее»
+            if (curTime === futureGreetingTime) {
+                return {
+                    type: 'FUTURE_GREETING',
+                    data: {
+                        word: 'С днем рождения!',
+                        script: 'Письмо из прошлого в будущее',
+                        lang: 'Праздничный',
+                        flag: '🎂',
+                        ipa: '[с любовью в будущее]',
+                        meaning: 'Ровно год назад для тебя началось это лингвистическое путешествие. 365 дней, 365 сокровенных понятий со всех уголков Земли прожиты вместе с тобой день за днем.',
+                        culture: 'Это послание было бережно сохранено еще осенью 2026 года специально для сегодняшнего дня. Пусть каждый твой новый день будет наполнен гармонией, вдохновением и светлым мераки!',
+                        example: '«С Днём Рождения! Пусть впереди ждет еще больше удивительных открытий, тепла и настоящих чудес!»',
+                        date: '13 Октября 2027',
+                        indexBadge: 'Особенный день',
+                        statusPill: 'Послание в будущее',
+                        note: 'С любовью сквозь время 🌿',
+                        speechLang: 'ru-RU',
+                        pronounceWord: 'С днем рождения, Даша!'
+                    }
+                };
+            }
+
+            // 4. После 14 октября 2027 года: «Путешествие окончено»
+            return {
+                type: 'JOURNEY_COMPLETED',
+                data: {
+                    word: 'Путешествие окончено',
+                    script: '365 дорог пройдены',
+                    lang: 'Эпилог',
+                    flag: '🕊️',
+                    ipa: '[границы языка — границы мира]',
+                    meaning: 'Надеюсь, что все слова за этот год нашли свое место в твоем сердце, и каждое из них оставило свой неповторимый след, подобно золотому коморэби на лесной тропе (если ты забыла, что такое коморэби, не переживай, я тоже).',
+                    culture: 'Лингвистический талисман завершил свой полный годовой круг. Но красота мира и богатство человеческой души бесконечны. Какие бы не стояли препятствия перед тобой, знай, что ты всё можешь!',
+                    example: '«Границы моего языка означают границы моего мира — и теперь твой мир стал намного шире, глубже и теплее.»',
+                    date: 'После 14 Октября 2027',
+                    indexBadge: 'Финал коллекции',
+                    statusPill: 'Завершено',
+                    note: 'Коллекция навсегда сохранена для Даши 🌿',
+                    speechLang: 'ru-RU',
+                    pronounceWord: 'Путешествие окончено'
+                }
+            };
+        }
+
+        const activeCard = resolveCardState(effectiveDate);
 
         // Элементы интерфейса
         const elCard = document.getElementById('word-card');
@@ -5774,6 +5887,7 @@
         const elPersonalNote = document.getElementById('card-personal-note');
         const elDateBadge = document.getElementById('card-date-badge');
         const elIndexBadge = document.getElementById('card-index-badge');
+        const elStatusPill = document.getElementById('card-status-pill');
 
         const btnPronounce = document.getElementById('btn-pronounce');
         const iconSpeaker = document.getElementById('icon-speaker');
@@ -5786,36 +5900,31 @@
         const btnCloseGuide = document.getElementById('btn-close-guide');
         const btnGuideOk = document.getElementById('btn-guide-ok');
 
-        // Применение конфига
-        document.getElementById('badge-title').textContent = CONFIG.badgeLabel;
-        elPersonalNote.textContent = CONFIG.personalNote;
+        // Отрисовка активной карточки
+        function renderCard(cardState) {
+            const d = cardState.data;
 
-        // Отрисовка сегодняшнего слова в карточке
-        function renderWord(index) {
-            const item = DICTIONARY[index];
-            if (!item) return;
-
-            // Анимация карточки
             elCard.classList.remove('fade-enter');
-            void elCard.offsetWidth; // Триггер reflow
+            void elCard.offsetWidth;
             elCard.classList.add('fade-enter');
 
-            elWord.textContent = item.word;
-            elScript.textContent = item.script;
-            elLang.textContent = `${item.lang} язык`;
-            elFlag.textContent = item.flag;
-            elIpa.textContent = item.ipa;
-            elMeaning.textContent = item.meaning;
-            elCulture.textContent = item.culture;
-            elExample.textContent = item.example;
-            elDateBadge.textContent = item.date;
-            elIndexBadge.textContent = `День ${item.index} из 365`;
+            elWord.textContent = d.word;
+            elScript.textContent = d.script;
+            elLang.textContent = `${d.lang} язык`;
+            elFlag.textContent = d.flag;
+            elIpa.textContent = d.ipa;
+            elMeaning.textContent = d.meaning;
+            elCulture.textContent = d.culture;
+            elExample.textContent = d.example;
+            elDateBadge.textContent = d.date;
+            elIndexBadge.textContent = d.indexBadge;
+            elStatusPill.textContent = d.statusPill;
+            elPersonalNote.textContent = d.note;
         }
 
         // Озвучивание через Web Speech API
-        function speakWord() {
-            const item = DICTIONARY[currentIndex];
-            if (!item) return;
+        function speakCurrentCard() {
+            const d = activeCard.data;
 
             if (!('speechSynthesis' in window)) {
                 showToast('Синтез речи не поддерживается браузером', '⚠️');
@@ -5824,15 +5933,21 @@
 
             window.speechSynthesis.cancel();
 
-            // Очищаем слово от ударения для чистого произношения синтезатором
-            const cleanWord = item.word.replace(/[́]/g, '').replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u');
+            const cleanWord = (d.pronounceWord || d.word)
+                .replace(/[́]/g, '')
+                .replace(/á/g, 'a')
+                .replace(/é/g, 'e')
+                .replace(/í/g, 'i')
+                .replace(/ó/g, 'o')
+                .replace(/ú/g, 'u');
+
             const utterance = new SpeechSynthesisUtterance(cleanWord);
-            utterance.lang = item.speechLang || 'en-US';
+            utterance.lang = d.speechLang || 'ru-RU';
             utterance.rate = 0.85;
 
             const voices = window.speechSynthesis.getVoices();
-            if (voices.length > 0 && item.speechLang) {
-                const matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(item.speechLang.slice(0, 2).toLowerCase()));
+            if (voices.length > 0 && d.speechLang) {
+                const matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(d.speechLang.slice(0, 2).toLowerCase()));
                 if (matchedVoice) {
                     utterance.voice = matchedVoice;
                 }
@@ -5849,7 +5964,7 @@
             utterance.onerror = () => {
                 iconSpeaker.classList.remove('hidden');
                 iconPlaying.classList.add('hidden');
-                showToast('Не удалось озвучить слово', '⚠️');
+                showToast('Не удалось озвучить', '⚠️');
             };
 
             window.speechSynthesis.speak(utterance);
@@ -5857,12 +5972,12 @@
 
         // Копирование карточки в буфер обмена
         function copyCardToClipboard() {
-            const item = DICTIONARY[currentIndex];
-            const textToCopy = `✦ Слово Дня: ${item.word} (${item.script}) ${item.flag}\nЯзык: ${item.lang} [${item.ipa}]\nДата: ${item.date} (День ${item.index} из 365)\n\nЗначение: ${item.meaning}\n\nКультурный контекст: ${item.culture}\n\nВ контексте: ${item.example}\n\n${CONFIG.personalNote}\nhttps://0chra.github.io/card_of_the_day/`;
+            const d = activeCard.data;
+            const textToCopy = `✦ Слово Дня: ${d.word} (${d.script}) ${d.flag}\nЯзык: ${d.lang} [${d.ipa}]\nДата: ${d.date}\n\nЗначение: ${d.meaning}\n\nКонтекст: ${d.culture}\n\nВ контексте: ${d.example}\n\n${d.note}\nhttps://0chra.github.io/card_of_the_day/`;
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(textToCopy).then(() => {
-                    showToast('Карточка слова скопирована!', '📋');
+                    showToast('Карточка скопирована!', '📋');
                 }).catch(() => fallbackCopy(textToCopy));
             } else {
                 fallbackCopy(textToCopy);
@@ -5879,7 +5994,7 @@
             textArea.select();
             try {
                 document.execCommand('copy');
-                showToast('Карточка слова скопирована!', '📋');
+                showToast('Карточка скопирована!', '📋');
             } catch (err) {
                 showToast('Не удалось скопировать', '⚠️');
             }
@@ -5907,7 +6022,7 @@
         }
 
         // Слушатели кнопок
-        btnPronounce.addEventListener('click', speakWord);
+        btnPronounce.addEventListener('click', speakCurrentCard);
         btnCopy.addEventListener('click', copyCardToClipboard);
 
         // Управление модалкой справки
@@ -5921,15 +6036,13 @@
             modalGuide.classList.add('hidden');
         });
 
-        // Закрытие модалки по клику на фон
         modalGuide.addEventListener('click', (e) => {
             if (e.target === modalGuide) modalGuide.classList.add('hidden');
         });
 
-        // Стартовая инициализация: строго сегодняшнее слово
-        renderWord(todayIndex);
+        // Отрисовка при загрузке
+        renderCard(activeCard);
 
-        // Предзагрузка голосов для TTS
         if ('speechSynthesis' in window) {
             window.speechSynthesis.onvoiceschanged = () => {
                 window.speechSynthesis.getVoices();
