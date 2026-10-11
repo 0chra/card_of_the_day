@@ -112,7 +112,7 @@
         
         <div id="word-card" class="editorial-card rounded-2xl p-6 sm:p-7 relative transition-all duration-300">
             
-            <!-- Теги: Флаг, Язык и Дата -->
+            <!-- Теги: Флаг, Язык/Статус и Дата -->
             <div class="flex items-center justify-between border-b border-[#EFE8DC] pb-4 mb-5">
                 <div class="flex items-center gap-2">
                     <span id="card-flag" class="text-2xl filter drop-shadow-sm">🇯🇵</span>
@@ -197,7 +197,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
                 </svg>
-                <span id="btn-copy-text">Поделиться карточкой сегодняшнего дня</span>
+                <span id="btn-copy-text">Поделиться карточкой</span>
             </button>
         </div>
     </main>
@@ -5746,7 +5746,7 @@
   }
 ];
 
-        // Ключевые календарные даты (год, месяц 0-индексирован, день)
+        // Ключевые календарные даты
         const START_DATE = new Date(2026, 9, 13);         // 13 октября 2026 (День 1)
         const END_DATE = new Date(2027, 9, 12);           // 12 октября 2027 (День 365)
         const FUTURE_GREETING_DATE = new Date(2027, 9, 13);// 13 октября 2027 (Поздравление в будущее)
@@ -5756,7 +5756,7 @@
             return new Date(d.getFullYear(), d.getMonth(), d.getDate());
         }
 
-        // Получение текущей даты (с поддержкой URL параметра ?testDate=YYYY-MM-DD для удобной проверки)
+        // Получение текущей даты (с поддержкой URL параметра ?testDate=YYYY-MM-DD для тестирования)
         function getCurrentEffectiveDate() {
             const urlParams = new URLSearchParams(window.location.search);
             const testDateStr = urlParams.get('testDate') || urlParams.get('date');
@@ -5781,17 +5781,18 @@
             // 1. До начала (до 13 октября 2026)
             if (curTime < startTime) {
                 const daysUntil = Math.ceil((startTime - curTime) / (1000 * 60 * 60 * 24));
+                const dayWord = daysUntil === 1 ? '1 день' : `${daysUntil} дней`;
                 return {
                     type: 'PRE_START',
                     data: {
                         word: 'Предвкушение',
                         script: 'Скоро открытие',
-                        lang: 'Календарь',
-                        flag: '⏳',
-                        ipa: '[скоро начнется]',
-                        meaning: `Коллекция откроет свое первое слово 13 октября 2026 года. До начала путешествия осталось дней: ${daysUntil}.`,
-                        culture: 'Каждый день на протяжении года здесь будет ровно одно редкое слово из разных уголков мира. Возвращайся завтра!',
-                        example: '«Путешествие в тысячу ли начинается с первого шага и первого слова.»',
+                        langTag: 'Пролог',
+                        flag: '✨',
+                        ipa: '[день 0 из 365]',
+                        meaning: `Коллекция откроет свое первое слово 13 октября 2026 года. До начала путешествия остался всего ${dayWord}!`,
+                        culture: 'Каждый день на протяжении года здесь будет появляться ровно одно редкое слово из разных уголков мира с переводом, этимологией и произношением.',
+                        example: '«Ожидание прекрасного события — это уже половина самого праздника.»',
                         date: 'Скоро открытие',
                         indexBadge: 'Ожидание старта',
                         statusPill: 'Старт 13.10.2026',
@@ -5811,7 +5812,7 @@
                     data: {
                         word: item.word,
                         script: item.script,
-                        lang: item.lang,
+                        langTag: `${item.lang} язык`,
                         flag: item.flag,
                         ipa: item.ipa,
                         meaning: item.meaning,
@@ -5834,12 +5835,12 @@
                     data: {
                         word: 'С днем рождения!',
                         script: 'Письмо из прошлого в будущее',
-                        lang: 'Праздничный',
+                        langTag: 'Праздничный день',
                         flag: '🎂',
-                        ipa: '[с любовью в будущее]',
+                        ipa: '[с любовью сквозь время]',
                         meaning: 'Ровно год назад для тебя началось это лингвистическое путешествие. 365 дней, 365 сокровенных понятий со всех уголков Земли прожиты вместе с тобой день за днем.',
-                        culture: 'Это послание было бережно сохранено еще осенью 2026 года специально для сегодняшнего дня. Пусть каждый твой новый день будет наполнен гармонией, вдохновением и светлым мераки!',
-                        example: '«С Днём Рождения! Пусть впереди ждет еще больше удивительных открытий, тепла и настоящих чудес!»',
+                        culture: 'Это послание было бережно сохранено в коде еще осенью 2026 года специально для сегодняшнего дня. Пусть каждый твой новый день будет наполнен гармонией, вдохновением и светлым мераки!',
+                        example: '«С праздником, Даша! Пусть впереди ждет еще больше удивительных открытий, тепла и настоящих чудес!»',
                         date: '13 Октября 2027',
                         indexBadge: 'Особенный день',
                         statusPill: 'Послание в будущее',
@@ -5856,11 +5857,11 @@
                 data: {
                     word: 'Путешествие окончено',
                     script: '365 дорог пройдены',
-                    lang: 'Эпилог',
+                    langTag: 'Эпилог',
                     flag: '🕊️',
                     ipa: '[границы языка — границы мира]',
-                    meaning: 'Надеюсь, что все слова за этот год нашли свое место в твоем сердце, и каждое из них оставило свой неповторимый след, подобно золотому коморэби на лесной тропе (если ты забыла, что такое коморэби, не переживай, я тоже).',
-                    culture: 'Лингвистический талисман завершил свой полный годовой круг. Но красота мира и богатство человеческой души бесконечны. Какие бы не стояли препятствия перед тобой, знай, что ты всё можешь!',
+                    meaning: 'Все 365 редких слов нашли свое место в твоем сердце. Каждое из них оставило свой неповторимый след, подобно золотому коморэби на лесной тропе.',
+                    culture: 'Лингвистический талисман завершил свой полный годовой круг. Но красота мира и богатство человеческой души бесконечны. Спасибо за этот прекрасный пройденный путь!',
                     example: '«Границы моего языка означают границы моего мира — и теперь твой мир стал намного шире, глубже и теплее.»',
                     date: 'После 14 Октября 2027',
                     indexBadge: 'Финал коллекции',
@@ -5910,7 +5911,7 @@
 
             elWord.textContent = d.word;
             elScript.textContent = d.script;
-            elLang.textContent = `${d.lang} язык`;
+            elLang.textContent = d.langTag;
             elFlag.textContent = d.flag;
             elIpa.textContent = d.ipa;
             elMeaning.textContent = d.meaning;
@@ -5973,7 +5974,7 @@
         // Копирование карточки в буфер обмена
         function copyCardToClipboard() {
             const d = activeCard.data;
-            const textToCopy = `✦ Слово Дня: ${d.word} (${d.script}) ${d.flag}\nЯзык: ${d.lang} [${d.ipa}]\nДата: ${d.date}\n\nЗначение: ${d.meaning}\n\nКонтекст: ${d.culture}\n\nВ контексте: ${d.example}\n\n${d.note}\nhttps://0chra.github.io/card_of_the_day/`;
+            const textToCopy = `✦ Слово Дня: ${d.word} (${d.script}) ${d.flag}\n${d.langTag} [${d.ipa}]\nДата: ${d.date}\n\nЗначение: ${d.meaning}\n\nКонтекст: ${d.culture}\n\nВ контексте: ${d.example}\n\n${d.note}\nhttps://0chra.github.io/card_of_the_day/`;
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(textToCopy).then(() => {
